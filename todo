@@ -13,5 +13,5 @@ sistemata l'importazione e l'esportazione di csv
 
 fase 2:
 creazione di un dashboard con grafici e statistiche
-implementare azioni multiple da una singola richiesta utente
+implementare azioni multiple da una singola richiesta utente (se l'azione richiesta dall'utente necessità più di una query sql, ad esempio un update e un select)
 
