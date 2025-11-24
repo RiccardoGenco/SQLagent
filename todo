@@ -1,0 +1,12 @@
+fase 1:
+il ruolo dell'utente è usato lato client, questo va bene per i test ma non è sicuro, bisogna passare il ruolo sempre dal server
+il login è solo lato client, può essere aggirato
+ottimizzare il codice per ridurre i token al minimo, inviare un prompt iniziale di comportamento
+inserire conteggio token nel db del registro messaggi
+inserire bottone per  estrazione csv dalle tabelle
+possibilità di importare una nuova tabella caricando un csv
+
+fase 2:
+creazione di un dashboard con grafici e statistiche
+implementare azioni multiple da una singola richiesta utente
+
