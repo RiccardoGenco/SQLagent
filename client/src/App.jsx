@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Terminal, Database, Shield, Moon, Sun, Download, History } from 'lucide-react';
+import { Send, Terminal, Database, Shield, Moon, Sun, Download, History, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 
 function App() {
     const [darkMode, setDarkMode] = useState(true);
     const [user, setUser] = useState(null); // { name, email, role }
+    const [token, setToken] = useState(localStorage.getItem('token'));
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loginError, setLoginError] = useState('');
@@ -16,6 +17,7 @@ function App() {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,6 +47,8 @@ function App() {
             const data = await res.json();
             if (res.ok) {
                 setUser(data.user);
+                setToken(data.token);
+                localStorage.setItem('token', data.token);
             } else {
                 setLoginError(data.error || 'Login failed');
             }
@@ -55,6 +59,8 @@ function App() {
 
     const handleLogout = () => {
         setUser(null);
+        setToken(null);
+        localStorage.removeItem('token');
         setMessages([{ role: 'assistant', content: 'Hello! I am your SQL Agent. Ask me anything about your data.' }]);
         setEmail('');
         setPassword('');
@@ -74,11 +80,11 @@ function App() {
         try {
             const res = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: input,
-                    role: user?.role || 'user'
-                })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ message: input })
             });
             const data = await res.json();
 
@@ -113,8 +119,11 @@ function App() {
         try {
             const res = await fetch('/api/confirm-query', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sql: confirmation.sql, role: user?.role })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ sql: confirmation.sql })
             });
             const data = await res.json();
 
@@ -129,6 +138,63 @@ function App() {
         } finally {
             setLoading(false);
             setConfirmation(null);
+        }
+    };
+
+    const downloadLastResult = () => {
+        const lastMsgWithData = [...messages].reverse().find(m => m.data && m.data.length > 0);
+        if (!lastMsgWithData) {
+            alert("Nessun dato da scaricare.");
+            return;
+        }
+
+        const rows = lastMsgWithData.data;
+        // Convert to CSV with BOM and semicolon separator for Excel
+        const headers = Object.keys(rows[0]).join(';');
+        const csvRows = rows.map(row => Object.values(row).map(v => {
+            if (v === null || v === undefined) return '';
+            const stringValue = String(v);
+            if (stringValue.includes(';') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        }).join(';'));
+
+        const csvContent = '\uFEFF' + [headers, ...csvRows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'risultati_query.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const tableName = prompt("Enter table name for this CSV:");
+        if (!tableName) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('tableName', tableName);
+
+        try {
+            const res = await fetch('/api/import', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message);
+            } else {
+                alert(data.error);
+            }
+        } catch (err) {
+            alert("Upload failed");
         }
     };
 
@@ -201,6 +267,32 @@ function App() {
                         </span>
                     </div>
                     <div className="flex items-center gap-4">
+                        {/* Export/Import Buttons */}
+                        <div className="hidden md:flex gap-2">
+                            <button
+                                onClick={downloadLastResult}
+                                className="text-xs bg-gray-200 dark:bg-slate-700 px-2 py-1 rounded hover:bg-gray-300 transition-colors flex items-center gap-1"
+                                title="Scarica l'ultima tabella visualizzata"
+                            >
+                                <Download className="w-3 h-3" /> Download CSV
+                            </button>
+
+                            {user.role === 'admin' && (
+                                <>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileUpload}
+                                        className="hidden"
+                                        accept=".csv"
+                                    />
+                                    <button onClick={() => fileInputRef.current?.click()} className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-200 transition-colors flex items-center gap-1">
+                                        <Upload className="w-3 h-3" /> Import CSV
+                                    </button>
+                                </>
+                            )}
+                        </div>
+
                         <div className="text-sm text-right hidden md:block">
                             <div className="font-medium">{user.name}</div>
                             <div className="text-xs text-gray-500">{user.email}</div>

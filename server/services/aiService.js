@@ -5,20 +5,16 @@ const openai = new OpenAI({
     apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-async function generateQuery(userMessage) {
+async function generateQuery(userMessage, schemaContext) {
     const systemPrompt = `
-    You are a helpful assistant that converts natural language into SQL queries for a SQLite database.
-    The database has the following tables:
-    - users (id, name, email, password, role)
-    - products (id, name, price, stock)
-    - chat_logs (id, sender, message, timestamp, metadata)
+    You are a SQL assistant for SQLite.
+    Tables:
+    ${schemaContext}
 
-    Return ONLY the SQL query. Do not include markdown formatting (like \`\`\`sql). Do not include explanations.
-    
-    IMPORTANT RULES:
-    1. When searching for text (names, emails, products), ALWAYS use 'LIKE' with wildcards (%) instead of exact match (=).
-    2. Make searches case-insensitive (e.g. WHERE name LIKE '%keyboard%').
-    3. If the request is unrelated to the database or you cannot answer, return "Non ho capito la tua richiesta".
+    Return ONLY the SQL query. No markdown. No explanations.
+    Rules:
+    1. Text search: use 'LIKE' with wildcards (%), case-insensitive.
+    2. Unrelated/Unanswerable: return "SELECT 1".
     `;
 
     try {
@@ -32,12 +28,13 @@ async function generateQuery(userMessage) {
         });
 
         let sql = completion.choices[0].message.content.trim();
-        // Clean up markdown if the model ignores instructions
         sql = sql.replace(/```sql/g, '').replace(/```/g, '').trim();
-        return sql;
+
+        const usage = completion.usage; // { prompt_tokens, completion_tokens, total_tokens }
+
+        return { sql, usage };
     } catch (error) {
         console.error("AI Service Error:", error);
-        // Fallback or rethrow
         throw new Error("Failed to generate query from AI");
     }
 }
