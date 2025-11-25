@@ -1,0 +1,50 @@
+Questo progetto è un'applicazione web full-stack progettata come un Agente SQL basato su AI. Permette agli utenti di interagire con un database SQLite utilizzando il linguaggio naturale (es. "Mostrami tutti gli utenti") che viene tradotto in query SQL dall'AI.
+
+Ecco i dettagli su come è realizzato e come avviarlo:
+
+ Struttura del Progetto
+Il progetto è diviso in due parti principali:
+
+Client (/client): L'interfaccia utente (Frontend).
+Tecnologie: React (v18), Vite (Build tool veloce), Tailwind CSS (Styling), Framer Motion (Animazioni).
+Funzionalità: Chat interfaccia, visualizzazione dati, login, export/import CSV.
+Server (/server): Il backend e le API.
+Tecnologie: Node.js, Express.
+Database: SQLite (file database.sqlite).
+AI & Logica: Utilizza OpenAI (tramite aiService.js) per convertire il testo in SQL.
+Sicurezza: Autenticazione JWT, protezione contro query pericolose (DROP, DELETE richiedono conferma).
+🚀 Come Costruire e Avviare il Progetto
+Dovrai avviare due terminali separati: uno per il server e uno per il client.
+
+1. Avviare il Server 
+Il server gestisce le API e la connessione al database.
+
+Apri un terminale e vai nella cartella server:
+
+cd server
+(Installa le dipendenze se non l'hai già fatto)
+
+npm install
+Avvia il server:
+bash
+node index.js
+
+2. Avviare il Client (Frontend)
+
+-------------------------------------------
+Apri un nuovo terminale e vai nella cartella client:
+
+cd client
+Installa le dipendenze:
+
+npm install
+Avvia l'ambiente di sviluppo:
+
+npm run dev
+-------------------------------------------
+
+ Funzionalità Chiave
+Chat AI: Scrivi domande in linguaggio naturale e ricevi risposte dal database.
+Sicurezza: Le query distruttive vengono bloccate e richiedono una conferma manuale.
+Gestione Dati: Puoi esportare tabelle in CSV e importare nuovi dati (solo admin).
+Storico: Tutte le chat e le query sono salvate nel database.
