@@ -6,14 +6,14 @@ Ecco i dettagli su come è realizzato e come avviarlo:
 Il progetto è diviso in due parti principali:
 
 Client (/client): L'interfaccia utente (Frontend).
-Tecnologie: React (v18), Vite (Build tool veloce), Tailwind CSS (Styling), Framer Motion (Animazioni).
+Tecnologie: React (v18), Vite, Tailwind CSS.
 Funzionalità: Chat interfaccia, visualizzazione dati, login, export/import CSV.
 Server (/server): Il backend e le API.
 Tecnologie: Node.js, Express.
 Database: SQLite (file database.sqlite).
 AI & Logica: Utilizza OpenAI (tramite aiService.js) per convertire il testo in SQL.
 Sicurezza: Autenticazione JWT, protezione contro query pericolose (DROP, DELETE richiedono conferma).
-🚀 Come Costruire e Avviare il Progetto
+ Come Costruire e Avviare il Progetto
 Dovrai avviare due terminali separati: uno per il server e uno per il client.
 
 1. Avviare il Server 
