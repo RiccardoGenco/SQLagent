@@ -23,7 +23,7 @@ const Mascot = ({ loading }) => {
                     {loading ? "Thinking about your query..." : "I'm ready to help! Ask me anything."}
                 </div>
                 <img
-                    src="/mascot.png"
+                    src="/renekton.png"
                     alt="AI Mascot"
                     className="w-32 h-32 object-contain drop-shadow-2xl cursor-pointer hover:scale-110 transition-transform"
                 />
