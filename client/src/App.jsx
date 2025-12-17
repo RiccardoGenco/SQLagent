@@ -12,6 +12,7 @@ function App() {
     const [darkMode, setDarkMode] = useState(true);
     const [user, setUser] = useState(null); // { name, email, role }
     const [token, setToken] = useState(localStorage.getItem('token'));
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loginError, setLoginError] = useState('');
@@ -40,14 +41,17 @@ function App() {
         }
     }, [darkMode]);
 
-    const handleLogin = async (e) => {
+    const handleAuth = async (e, isRegister) => {
         e.preventDefault();
         setLoginError('');
+        const endpoint = isRegister ? '/api/register' : '/api/login';
+        const body = isRegister ? { name, email, password } : { email, password };
+
         try {
-            const res = await fetch('/api/login', {
+            const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify(body)
             });
             const data = await res.json();
             if (res.ok) {
@@ -55,7 +59,7 @@ function App() {
                 setToken(data.token);
                 localStorage.setItem('token', data.token);
             } else {
-                setLoginError(data.error || 'Login failed');
+                setLoginError(data.error || 'Authentication failed');
             }
         } catch (err) {
             setLoginError('Connection error');
@@ -206,7 +210,9 @@ function App() {
     if (!user) {
         return (
             <Login
-                handleLogin={handleLogin}
+                handleAuth={handleAuth}
+                name={name}
+                setName={setName}
                 email={email}
                 setEmail={setEmail}
                 password={password}

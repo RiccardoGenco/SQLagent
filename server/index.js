@@ -9,6 +9,7 @@ const path = require('path');
 const db = require('./database');
 const aiService = require('./services/aiService');
 const sqlService = require('./services/sqlService');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,12 +35,53 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// Register Route
+app.post('/api/register', async (req, res) => {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+        return res.status(400).json({ error: "All fields are required" });
+    }
+
+    db.get("SELECT * FROM users WHERE email = ?", [email], async (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (row) return res.status(400).json({ error: "User already exists" });
+
+        try {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+
+            const stmt = db.prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)");
+            stmt.run(name, email, hashedPassword, "user", function (err) {
+                if (err) return res.status(500).json({ error: err.message });
+
+                const userId = this.lastID;
+                const token = jwt.sign(
+                    { id: userId, name: name, email: email, role: 'user' },
+                    JWT_SECRET,
+                    { expiresIn: '24h' }
+                );
+
+                res.json({
+                    token,
+                    user: { id: userId, name: name, email: email, role: 'user' }
+                });
+            });
+            stmt.finalize();
+        } catch (e) {
+            res.status(500).json({ error: "Error registering user" });
+        }
+    });
+});
+
 // Login Route
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
-    db.get("SELECT * FROM users WHERE email = ? AND password = ?", [email, password], (err, row) => {
+    db.get("SELECT * FROM users WHERE email = ?", [email], async (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
         if (!row) return res.status(401).json({ error: "Invalid credentials" });
+
+        const validPassword = await bcrypt.compare(password, row.password);
+        if (!validPassword) return res.status(401).json({ error: "Invalid credentials" });
 
         // Generate Token
         const token = jwt.sign(

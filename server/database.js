@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const bcrypt = require('bcrypt');
 
 const dbPath = path.resolve(__dirname, 'database.sqlite');
 
@@ -44,8 +45,11 @@ function initDb() {
         db.get("SELECT count(*) as count FROM users", (err, row) => {
             if (row.count === 0) {
                 const stmt = db.prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)");
-                stmt.run("Alice Admin", "admin@example.com", "admin123", "admin");
-                stmt.run("Bob User", "user@example.com", "user123", "user");
+                const salt = bcrypt.genSaltSync(10);
+                const adminHash = bcrypt.hashSync("admin123", salt);
+                const userHash = bcrypt.hashSync("user123", salt);
+                stmt.run("Alice Admin", "admin@example.com", adminHash, "admin");
+                stmt.run("Bob User", "user@example.com", userHash, "user");
                 stmt.finalize();
                 console.log("Seeded users table with passwords.");
             }
